@@ -1,0 +1,6 @@
+---
+- name: vagrant key
+  authorized_key:
+    user: vagrant
+    state: present
+    key: https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant.pub

@@ -1,0 +1,62 @@
+{
+    "variables": {
+      "iso_url": "file://centos8.iso",
+      "iso_checksum": "fd7ac0ab2dd4775411ecc36c51b5272d",
+      "ssh_timeout": "20m",
+      "headless": "true",
+      "version": "2020.06.13"
+    },
+    "builders": [
+      {
+        "type": "virtualbox-iso",
+        "iso_url": "{{ user `iso_url` }}",
+        "iso_checksum": "{{ user `iso_checksum` }}",
+        "guest_os_type": "RedHat_64",
+        "guest_additions_mode": "disable",
+        "http_directory": "srv",
+        "boot_wait": "5s",
+        "shutdown_command": "sudo systemctl isolate poweroff.target",
+        "boot_command": [
+        "<up>",
+        "<tab> text ks=cdrom:/ks.cfg<enter><wait>"
+        ],
+        "disk_size": 20480,
+        "hard_drive_interface": "sata",
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_timeout": "{{ user `ssh_timeout` }}",
+        "headless" : "{{ user `headless`}}",
+        "vboxmanage": [
+           ["modifyvm", "{{.Name}}", "--memory", "1024"]
+        ]
+      }
+    ],
+
+    "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/ansible.sh"
+    },
+    {
+      "type": "ansible-local",
+      "role_paths": [ "ansible/roles/vagrant", "ansible/roles/packages" ],
+      "playbook_file": "ansible/main.yml"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/cleanup.sh"
+    }
+    ],
+
+    "post-processors": [
+    [
+    {
+      "type": "vagrant",
+      "output": "../output/centos-81-{{ user `version` }}-{{ .Provider }}.box",
+      "compression_level": "9"
+    }
+    ]
+  ]
+}

@@ -1,0 +1,4 @@
+*tmp_dir
+output
+packer_cache
+.vagrant
