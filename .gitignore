@@ -2,3 +2,5 @@
 output
 packer_cache
 .vagrant
+*.box
+*.sublime-workspace

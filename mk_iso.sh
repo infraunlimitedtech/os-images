@@ -27,7 +27,7 @@ cp_additional() {
 }
 
 read_vars() {
-  echo "Take vars from ${var_file}"
+  echo "Sourcing vars from ${var_file}"
   source ${var_file}
 }
 
@@ -45,11 +45,11 @@ mk_iso () {
 }
 
 main () {
-read_vars
-cp_ks
-cp_additional
-execute_scripts
-mk_iso
+  read_vars
+  cp_ks
+  cp_additional
+  execute_scripts
+  mk_iso
 }
 
 # END FUNCTIONS #

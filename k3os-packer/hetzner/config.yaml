@@ -1,0 +1,6 @@
+boot_cmd:
+- 'sudo unlink /etc/runlevels/default/k3s-service'
+ssh_authorized_keys:
+- github:spigell 
+k3os:
+  password: $1$tMdiOT3S$vz/w9Dd/NS.IqQoutU2Gt.
