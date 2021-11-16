@@ -10,21 +10,17 @@ variable "password" {
 
 variable "iso_version" {
   type    = string
-  default = "v0.20.7-k3s1r0"
+  default = "${env("ISO_VERSION")}"
 }
 
 variable "iso_checksum" {
   type    = string
-  default = "85a560585bc5520a793365d70e6ce984f3fb2ce5a43b31f0f7833dc347487e69"
+  default = "${env("ISO_CHECKSUM")}"
 }
 
 locals {
   iso_url = "https://github.com/rancher/k3os/releases/download/${var.iso_version}/k3os-amd64.iso"
-}
-
-variable "vagrant_box_version" {
-  type    = string
-  default = "0.20.7"
+  vagrant_box_version = regex("\\d+.\\d+.\\d+", var.iso_version)
 }
 
 variable "vagrant_cloud_token" {
@@ -50,7 +46,7 @@ source "virtualbox-iso" "vagrant" {
   boot_command         = ["rancher", "<enter>", "sudo k3os install", "<enter>", "1", "<enter>", "y", "<enter>", "http://{{ .HTTPIP }}:{{ .HTTPPort }}/vagrant-virtualbox/config.yml", "<enter>", "y", "<enter>"]
   boot_wait            = "40s"
   disk_size            = "8000"
-  export_opts          = ["--manifest", "--vsys", "0", "--description", "${var.description}", "--version", "${var.vagrant_box_version}"]
+  export_opts          = ["--manifest", "--vsys", "0", "--description", "${var.description}", "--version", "${local.vagrant_box_version}"]
   format               = "ova"
   guest_os_type        = "Linux_64"
   http_directory       = "."
@@ -105,7 +101,7 @@ build {
       access_token        = "${var.vagrant_cloud_token}"
       box_tag             = "spigell/k3os"
       no_release          = true
-      version             = "${var.vagrant_box_version}"
+      version             = "${local.vagrant_box_version}"
       version_description = "Based on version ${var.iso_version}"
     }
   }
