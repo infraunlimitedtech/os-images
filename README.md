@@ -1,5 +1,5 @@
 # Create iso
-sudo bash ./mk_iso.sh create --var-file ./centos-8-iso/vars.conf ./centos-8-tmp_dir
+sudo bash ./remaster-iso.sh ~/downloads/rhel-8.5-x86_64-boot-1637258608.iso ./rhel8-iso
 
 # Packer
 md5sum ./test.iso
@@ -8,3 +8,4 @@ packer build -var 'headless=false' -var 'iso_url=file:///home/spigell/projects/i
 
 vagrant up
 vagrant destroy --force
+

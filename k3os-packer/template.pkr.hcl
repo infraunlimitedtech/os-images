@@ -18,9 +18,32 @@ variable "iso_checksum" {
   default = "${env("ISO_CHECKSUM")}"
 }
 
+variable "qemu_ssh_private_key" {
+  type    = string
+  default = "tmp/id_rsa"
+}
+
 locals {
   iso_url = "https://github.com/rancher/k3os/releases/download/${var.iso_version}/k3os-amd64.iso"
   vagrant_box_version = regex("\\d+.\\d+.\\d+", var.iso_version)
+  boot_command_default = [
+    "rancher", "<enter>",
+    "export K3OS_INSTALL_POWER_OFF=true", "<enter>",
+    "sudo -E k3os install", "<enter>",
+    "1", "<enter>", "y", "<enter>",
+    "http://{{ .HTTPIP }}:{{ .HTTPPort }}/config.yml", "<enter>", "y", "<enter>"
+  ]
+  boot_command_lvm = [
+    "rancher", "<enter>",
+    "export K3OS_INSTALL_POWER_OFF=true", "<enter>",
+    "export INTERACTIVE=true", "<enter>",
+    "export K3OS_INSTALL_NO_FORMAT=true", "<enter>",
+    "curl http://{{ .HTTPIP }}:{{ .HTTPPort }}/create-disk-layout.sh | sudo bash", "<enter>",
+    "<wait5m>",
+    "sudo -E k3os install", "<enter>",
+    "1", "<enter>", "y", "<enter>",
+    "http://{{ .HTTPIP }}:{{ .HTTPPort }}/config.yml", "<enter>", "y", "<enter>"
+  ]
 }
 
 variable "vagrant_cloud_token" {
@@ -43,27 +66,46 @@ source "hcloud" "main" {
 }
 
 source "virtualbox-iso" "vagrant" {
-  boot_command         = ["rancher", "<enter>", "sudo k3os install", "<enter>", "1", "<enter>", "y", "<enter>", "http://{{ .HTTPIP }}:{{ .HTTPPort }}/vagrant-virtualbox/config.yml", "<enter>", "y", "<enter>"]
+  communicator         = "none"
+  guest_additions_mode = "disable"
+  guest_os_type        = "Linux_64"
+  iso_url              = local.iso_url
+  iso_checksum         = "sha256:${var.iso_checksum}"
+  headless             = "true"
+  vrdp_bind_address    = "0.0.0.0"
+  boot_command         = local.boot_command_default
   boot_wait            = "40s"
   disk_size            = "8000"
   export_opts          = ["--manifest", "--vsys", "0", "--description", "${var.description}", "--version", "${local.vagrant_box_version}"]
   format               = "ova"
-  guest_os_type        = "Linux_64"
-  http_directory       = "."
+  http_directory       = "vagrant-virtualbox"
+  disable_shutdown     = "true"
+  virtualbox_version_file = ""
+}
+
+source "qemu" "libvirt" {
+  communicator         = "none"
+  iso_url              = local.iso_url
   iso_checksum         = "sha256:${var.iso_checksum}"
-  iso_url              = "${local.iso_url}"
-  post_shutdown_delay  = "10s"
-  shutdown_command     = "sudo poweroff"
-  ssh_keypair_name     = ""
-  ssh_private_key_file = "vagrant-virtualbox/id_rsa"
-  ssh_timeout          = "1000s"
-  ssh_username         = "rancher"
+  qemu_binary          = "/usr/libexec/qemu-kvm"
+  headless             = "true"
+  vnc_bind_address     = "0.0.0.0"
+  boot_command         = local.boot_command_default
+  boot_wait            = "50s"
+  disk_size            = "20000"
+  # Should change to raw later
+  format               = "qcow2"
+  http_directory       = "libvirt-qemu"
+  shutdown_timeout     = "30m"
 }
 
 
 
 build {
-  sources = ["source.hcloud.main", "source.virtualbox-iso.vagrant"]
+  # Do not build Hetzner right now
+  #sources = ["source.hcloud.main", "source.virtualbox-iso.vagrant", "source.qemu.libvirt"]
+
+  sources = ["source.virtualbox-iso.vagrant", "source.qemu.libvirt"]
 
 
   provisioner "file" {
@@ -92,12 +134,12 @@ build {
 
   post-processors {
     post-processor "vagrant" {
-      only        = [ "virtualbox-iso.vagrant" ]
-      output = "k3os-vagrant.box"
+      only                = [ "virtualbox-iso.vagrant" ]
+      output              = "k3os-local.box"
     }
     post-processor "vagrant-cloud" {
-      name = "vagrant-cloud"
-      only        = [ "virtualbox-iso.vagrant" ]
+      name                = "vagrant-cloud"
+      only                = [ "virtualbox-iso.vagrant" ]
       access_token        = "${var.vagrant_cloud_token}"
       box_tag             = "spigell/k3os"
       no_release          = true

@@ -1,0 +1,7 @@
+boot_cmd:
+- 'sudo unlink /etc/runlevels/default/k3s-service'
+- 'sudo sh -c "echo GA_PATH=/dev/vport1p1 > /etc/conf.d/qemu-guest-agent"'
+ssh_authorized_keys:
+- github:infraunlimitedowner
+k3os:
+  password: "$6$7Mw7WhZ6wwxR28uD$W3VhXiO7zTQm.jubGlxHLxWsXKFLNwQUbIenxjfRnqoUrfyl0ORlYRB9m3AJcvFppkccO6BsCV7cT5hIzglwM."

@@ -1,5 +1,7 @@
 *tmp_dir
-output
+*.box
+*.iso
+output*
 packer_cache
 .vagrant
 *.box
